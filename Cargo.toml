@@ -1,0 +1,13 @@
+[package]
+name = "editorconfig-checker-rust"
+version = "0.1.0"
+authors = ["Max Strübing <mxstrbng@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+sys-info = "0.5.8"
+reqwest = "0.9.20"
+tar = "0.4.26"
+flate2 = "1.0.11"
