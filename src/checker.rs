@@ -114,7 +114,6 @@ pub fn unpack(tar_path: &str, base_path: &str) -> Result<()> {
     Ok(())
 }
 
-// TODO: Needs error handling
 // TODO: Test
 pub fn get_base_path() -> Result<String> {
     let path = env::current_exe()?;
