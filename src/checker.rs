@@ -1,3 +1,4 @@
+use crate::error::{Error, Result};
 use std::{env, fs, io};
 
 #[cfg(test)]
@@ -47,19 +48,23 @@ mod tests {
             ""
         );
     }
+
+    #[test]
+    fn test_path_exists() {
+    }
 }
 
 // TODO: How to use cfg to pass a value into this function to be able to test it?
 // TODO: Test
-pub fn get_architecture() -> Result<&'static str, &'static str> {
+pub fn get_architecture() -> Result<&'static str> {
     // TODO: This is not sufficient and needs to care for more cases
     if cfg!(target_pointer_width = "64") {
-        return Ok("amd64");
+        Ok("amd64")
     } else if cfg!(target_pointer_width = "32") {
-        return Ok("386");
+        Ok("386")
+    } else {
+        Err(Error::UnknownArch)
     }
-
-    Err("Unknown architecture")
 }
 
 // TODO: Test
@@ -76,13 +81,8 @@ where
 }
 
 // TODO: Test
-pub fn get_os_type() -> Result<String, &'static str> {
-    let os_type_result = sys_info::os_type();
-
-    match os_type_result {
-        Ok(os_type) => Ok(os_type.to_lowercase()),
-        Err(_) => Err("Can't get operating system type"),
-    }
+pub fn get_os_type() -> Result<String> {
+    Ok(sys_info::os_type().map(|os_type| os_type.to_lowercase())?)
 }
 
 pub fn generate_filename(os: &str, arch: &str) -> String {
@@ -95,16 +95,17 @@ pub fn generate_base_url(version: &str) -> String {
 }
 
 // TODO: Test
-pub fn download(base_url: &str, filename: &str) {
-    let filepath = format!("{}/{}.tar.gz", get_base_path(), filename);
+pub fn download(base_url: &str, filename: &str) -> Result<()> {
+    let filepath = format!("{}/{}.tar.gz", get_base_path()?, filename);
     let url = format!("{}/{}.tar.gz", base_url, filename);
     let mut resp = reqwest::get(&url).expect("request failed");
-    let mut out = fs::File::create(filepath).expect("failed to create file");
-    io::copy(&mut resp, &mut out).expect("failed to copy content");
+    let mut out = fs::File::create(filepath)?;
+    io::copy(&mut resp, &mut out)?;
+    Ok(())
 }
 
 // TODO: Test
-pub fn unpack(tar_path: &str, base_path: &str) -> Result<(), std::io::Error> {
+pub fn unpack(tar_path: &str, base_path: &str) -> Result<()> {
     let tar_gz = fs::File::open(&tar_path)?;
     let tar = flate2::read::GzDecoder::new(tar_gz);
     let mut archive = tar::Archive::new(tar);
@@ -116,21 +117,13 @@ pub fn unpack(tar_path: &str, base_path: &str) -> Result<(), std::io::Error> {
 
 // TODO: Needs error handling
 // TODO: Test
-pub fn get_base_path() -> String {
-    let path = env::current_exe();
+pub fn get_base_path() -> Result<String> {
+    let path = env::current_exe()?;
 
-    match path {
-        Ok(p) => {
-            let mut path = p.into_os_string().into_string().unwrap();
-            let index = path.rfind('/');
-            match index {
-                Some(idx) => path.truncate(idx),
-                None => println!(""),
-            };
-
-            path
-        }
-
-        Err(_) => String::from(""),
+    let mut path = path.into_os_string().into_string()?;
+    if let Some(idx) = path.rfind('/') {
+        path.truncate(idx);
     }
+
+    Ok(path)
 }
