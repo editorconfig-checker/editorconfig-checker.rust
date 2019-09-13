@@ -97,7 +97,7 @@ pub fn generate_base_url(version: &str) -> String {
 pub fn download(base_url: &str, filename: &str) -> Result<()> {
     let filepath = format!("{}/{}.tar.gz", get_base_path()?, filename);
     let url = format!("{}/{}.tar.gz", base_url, filename);
-    let mut resp = reqwest::get(&url).expect("request failed");
+    let mut resp = reqwest::get(&url)?;
     let mut out = fs::File::create(filepath)?;
     io::copy(&mut resp, &mut out)?;
     Ok(())

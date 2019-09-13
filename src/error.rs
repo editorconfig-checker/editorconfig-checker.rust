@@ -8,6 +8,7 @@ pub enum Error {
     UnknownArch,
     UnknownOS(sys_info::Error),
     InvalidPathName(std::ffi::OsString),
+    Network(reqwest::Error),
 }
 
 impl fmt::Display for Error {
@@ -18,6 +19,7 @@ impl fmt::Display for Error {
             UnknownArch => write!(fmt, "Unknown Architecture"),
             UnknownOS(err) => write!(fmt, "Unknown Operating System ({})", err),
             InvalidPathName(err) => write!(fmt, "Invalid Path Name ({:?})", err),
+            Network(err) => write!(fmt, "Error downloading the file ({})", err),
         }
     }
 }
@@ -37,5 +39,11 @@ impl From<sys_info::Error> for Error {
 impl From<std::ffi::OsString> for Error {
     fn from(err: std::ffi::OsString) -> Self {
         Error::InvalidPathName(err)
+    }
+}
+
+impl From<reqwest::Error> for Error {
+    fn from(err: reqwest::Error) -> Self {
+        Error::Network(err)
     }
 }
