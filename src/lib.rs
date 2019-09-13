@@ -3,10 +3,7 @@ extern crate reqwest;
 extern crate sys_info;
 extern crate tar;
 
-use std::env;
-use std::fs;
-use std::io;
-use std::string::String;
+use std::{env, fs, io};
 
 #[cfg(test)]
 mod tests {
