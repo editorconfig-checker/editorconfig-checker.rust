@@ -22,7 +22,7 @@ fn main() -> Result<()> {
     }
 
     let command = process::Command::new(binary_path)
-        .arg(checker::get_args_as_string(std::env::args()))
+        .args(std::env::args().skip(1))
         .output()
         .expect("failed to run binary");
 
