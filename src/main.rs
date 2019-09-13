@@ -3,15 +3,11 @@ extern crate reqwest;
 extern crate sys_info;
 extern crate tar;
 
-use flate2::read::GzDecoder;
+use std::env;
 use std::fs;
-use std::fs::File;
 use std::io;
-use std::path::Path;
 use std::process;
-use std::process::Command;
 use std::string::String;
-use tar::Archive;
 
 fn main() {
     let version: String = String::from("2.0.2");
@@ -44,7 +40,7 @@ fn main() {
 
         download(base_url, &filename);
         match unpack(&tar_path, base_path) {
-            Ok(()) => process::exit(0),
+            Ok(()) => (),
             Err(err) => {
                 println!("{}", err);
                 process::exit(1);
@@ -52,21 +48,41 @@ fn main() {
         }
     }
 
-    // TODO: Run binary with args
-    let output = Command::new(binary_path)
-        .arg("")
+    let command = process::Command::new(binary_path)
+        .arg(get_args_as_string())
         .output()
         .expect("failed to run binary");
-    let hello = output.stdout;
 
-    // TODO: figure out how output works
-    for i in hello {
-        println!("{}", i)
+    let output = std::str::from_utf8(&command.stdout);
+    match output {
+        Ok(res) => println!("{}", res),
+        Err(err) => {
+            print!("{}", err);
+            process::exit(1);
+        }
+    }
+
+    if !command.status.success() {
+        process::exit(1);
     }
 }
 
 fn path_exists(filename: &String) -> bool {
-    Path::new(&filename).exists()
+    std::path::Path::new(&filename).exists()
+}
+
+fn get_args_as_string() -> String {
+    let mut args: Vec<String> = Vec::new();
+
+    for (index, arg) in env::args().enumerate() {
+        if index == 0 {
+            continue;
+        }
+
+        args.push(arg)
+    }
+
+    args.join(" ")
 }
 
 fn get_architecture() -> Result<String, String> {
@@ -104,14 +120,14 @@ fn download(base_url: String, filename: &String) {
     let filepath = format!("{}/{}.tar.gz", get_base_path(), filename);
     let url = format!("{}/{}.tar.gz", base_url, filename);
     let mut resp = reqwest::get(&url).expect("request failed");
-    let mut out = File::create(filepath).expect("failed to create file");
+    let mut out = fs::File::create(filepath).expect("failed to create file");
     io::copy(&mut resp, &mut out).expect("failed to copy content");
 }
 
 fn unpack(tar_path: &String, base_path: String) -> Result<(), std::io::Error> {
-    let tar_gz = File::open(&tar_path)?;
-    let tar = GzDecoder::new(tar_gz);
-    let mut archive = Archive::new(tar);
+    let tar_gz = fs::File::open(&tar_path)?;
+    let tar = flate2::read::GzDecoder::new(tar_gz);
+    let mut archive = tar::Archive::new(tar);
     archive.unpack(base_path)?;
     fs::remove_file(&tar_path)?;
 
@@ -120,7 +136,7 @@ fn unpack(tar_path: &String, base_path: String) -> Result<(), std::io::Error> {
 
 // TODO: Needs error handling
 fn get_base_path() -> String {
-    let path = std::env::current_exe();
+    let path = env::current_exe();
 
     match path {
         Ok(p) => {
