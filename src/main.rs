@@ -6,24 +6,8 @@ use std::process;
 
 fn main() -> Result<()> {
     let version = "2.0.2";
-    let architecture: &str;
-    let os_type: String;
-
-    match checker::get_architecture() {
-        Ok(result) => architecture = result,
-        Err(err) => {
-            println!("{}", err);
-            process::exit(1);
-        }
-    }
-
-    match checker::get_os_type() {
-        Ok(result) => os_type = result,
-        Err(err) => {
-            println!("{}", err);
-            process::exit(1);
-        }
-    }
+    let architecture = checker::get_architecture()?;
+    let os_type = checker::get_os_type()?;
 
     let filename = checker::generate_filename(&os_type, architecture);
     let base_path = checker::get_base_path()?;
@@ -34,13 +18,7 @@ fn main() -> Result<()> {
         let base_url: String = checker::generate_base_url(version);
 
         checker::download(&base_url, &filename)?;
-        match checker::unpack(&tar_path, &base_path) {
-            Ok(()) => (),
-            Err(err) => {
-                println!("{}", err);
-                process::exit(1);
-            }
-        }
+        checker::unpack(&tar_path, &base_path)?;
     }
 
     let command = process::Command::new(binary_path)
@@ -48,17 +26,7 @@ fn main() -> Result<()> {
         .output()
         .expect("failed to run binary");
 
-    let output = std::str::from_utf8(&command.stdout);
-    match output {
-        Ok(res) => println!("{}", res),
-        Err(err) => {
-            print!("{}", err);
-            process::exit(1);
-        }
-    }
+    println!("{}", std::str::from_utf8(&command.stdout)?);
 
-    if !command.status.success() {
-        process::exit(1);
-    }
-    Ok(())
+    process::exit(command.status.code().unwrap_or_default());
 }
