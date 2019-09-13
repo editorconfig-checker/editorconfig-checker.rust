@@ -27,24 +27,6 @@ mod tests {
     }
 
     #[test]
-    fn test_get_args_as_string() {
-        assert_eq!(
-            get_args_as_string(["arg1", "arg2"].iter().map(|s| s.to_string())),
-            "arg2"
-        );
-
-        assert_eq!(
-            get_args_as_string(["arg1", "arg2", "arg3"].iter().map(|s| s.to_string())),
-            "arg2 arg3"
-        );
-
-        assert_eq!(
-            get_args_as_string(["arg1"].iter().map(|s| s.to_string())),
-            ""
-        );
-    }
-
-    #[test]
     fn test_path_exists() {
         let file = NamedTempFile::new().unwrap();
         let path = format!("{}", file.path().display());
@@ -69,14 +51,6 @@ pub fn get_architecture() -> Result<&'static str> {
 
 pub fn path_exists(filename: impl AsRef<std::path::Path>) -> bool {
     filename.as_ref().exists()
-}
-
-pub fn get_args_as_string<T>(args: T) -> String
-where
-    // Iterator<Item = String> matches to std::env::Args
-    T: Iterator<Item = String>,
-{
-    args.skip(1).collect::<Vec<String>>().join(" ")
 }
 
 // TODO: Test
