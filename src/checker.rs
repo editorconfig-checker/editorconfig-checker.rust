@@ -4,18 +4,13 @@ use std::{env, fs, io};
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tempfile::NamedTempFile;
 
     #[test]
     fn test_generate_filename() {
-        assert_eq!(
-            generate_filename("abc", "def"),
-            "ec-abc-def"
-        );
+        assert_eq!(generate_filename("abc", "def"), "ec-abc-def");
 
-        assert_eq!(
-            generate_filename("linux", "amd64"),
-            "ec-linux-amd64"
-        );
+        assert_eq!(generate_filename("linux", "amd64"), "ec-linux-amd64");
     }
 
     #[test]
@@ -51,6 +46,11 @@ mod tests {
 
     #[test]
     fn test_path_exists() {
+        let file = NamedTempFile::new().unwrap();
+        let path = format!("{}", file.path().display());
+        assert_eq!(true, path_exists(&path));
+        file.close().expect("Closing and deleting tempfile failed");
+        assert_eq!(false, path_exists(&path));
     }
 }
 
@@ -67,9 +67,8 @@ pub fn get_architecture() -> Result<&'static str> {
     }
 }
 
-// TODO: Test
-pub fn path_exists(filename: &str) -> bool {
-    std::path::Path::new(filename).exists()
+pub fn path_exists(filename: impl AsRef<std::path::Path>) -> bool {
+    filename.as_ref().exists()
 }
 
 pub fn get_args_as_string<T>(args: T) -> String
