@@ -8,6 +8,57 @@ use std::fs;
 use std::io;
 use std::string::String;
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_generate_filename() {
+        assert_eq!(
+            generate_filename(String::from("abc"), String::from("def")),
+            "ec-abc-def"
+        );
+
+        assert_eq!(
+            generate_filename(String::from("linux"), String::from("amd64")),
+            "ec-linux-amd64"
+        );
+    }
+
+    #[test]
+    fn test_generate_base_url() {
+        assert_eq!(
+            generate_base_url(String::from("2.0.2")),
+            "https://github.com/editorconfig-checker/editorconfig-checker/releases/download/2.0.2"
+        );
+
+        assert_eq!(
+            generate_base_url(String::from("1.0.0")),
+            "https://github.com/editorconfig-checker/editorconfig-checker/releases/download/1.0.0"
+        );
+    }
+
+    #[test]
+    fn test_get_args_as_string() {
+        assert_eq!(
+            get_args_as_string(["arg1", "arg2"].iter().map(|s| s.to_string())),
+            "arg2"
+        );
+
+        assert_eq!(
+            get_args_as_string(["arg1", "arg2", "arg3"].iter().map(|s| s.to_string())),
+            "arg2 arg3"
+        );
+
+        assert_eq!(
+            get_args_as_string(["arg1"].iter().map(|s| s.to_string())),
+            ""
+        );
+    }
+}
+
+// TODO: How to use cfg to pass a value into this function to be able to test it?
+// TODO: Test
 pub fn get_architecture() -> Result<String, String> {
     // TODO: This is not sufficient and needs to care for more cases
     if cfg!(target_pointer_width = "64") {
@@ -19,24 +70,20 @@ pub fn get_architecture() -> Result<String, String> {
     Err(String::from("Unknown architecture"))
 }
 
+// TODO: Test
 pub fn path_exists(filename: &String) -> bool {
     std::path::Path::new(&filename).exists()
 }
 
-pub fn get_args_as_string() -> String {
-    let mut args: Vec<String> = Vec::new();
-
-    for (index, arg) in env::args().enumerate() {
-        if index == 0 {
-            continue;
-        }
-
-        args.push(arg)
-    }
-
-    args.join(" ")
+pub fn get_args_as_string<T>(args: T) -> String
+where
+    // Iterator<Item = String> matches to std::env::Args
+    T: Iterator<Item = String>,
+{
+    args.skip(1).collect::<Vec<String>>().join(" ")
 }
 
+// TODO: Test
 pub fn get_os_type() -> Result<String, String> {
     let os_type_result = sys_info::os_type();
 
@@ -57,6 +104,7 @@ pub fn generate_base_url(version: String) -> String {
     format!("{}/{}", base_url, version)
 }
 
+// TODO: Test
 pub fn download(base_url: String, filename: &String) {
     let filepath = format!("{}/{}.tar.gz", get_base_path(), filename);
     let url = format!("{}/{}.tar.gz", base_url, filename);
@@ -65,6 +113,7 @@ pub fn download(base_url: String, filename: &String) {
     io::copy(&mut resp, &mut out).expect("failed to copy content");
 }
 
+// TODO: Test
 pub fn unpack(tar_path: &String, base_path: String) -> Result<(), std::io::Error> {
     let tar_gz = fs::File::open(&tar_path)?;
     let tar = flate2::read::GzDecoder::new(tar_gz);
@@ -76,6 +125,7 @@ pub fn unpack(tar_path: &String, base_path: String) -> Result<(), std::io::Error
 }
 
 // TODO: Needs error handling
+// TODO: Test
 pub fn get_base_path() -> String {
     let path = env::current_exe();
 

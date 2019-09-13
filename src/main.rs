@@ -43,7 +43,7 @@ fn main() {
     }
 
     let command = process::Command::new(binary_path)
-        .arg(lib::get_args_as_string())
+        .arg(lib::get_args_as_string(std::env::args()))
         .output()
         .expect("failed to run binary");
 
