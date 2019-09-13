@@ -1,8 +1,3 @@
-extern crate flate2;
-extern crate reqwest;
-extern crate sys_info;
-extern crate tar;
-
 use std::{env, fs, io};
 
 #[cfg(test)]
