@@ -1,5 +1,5 @@
 use crate::error::{Error, Result};
-use std::{env, fs, io};
+use std::{env, fs, io, path::Path};
 
 #[cfg(test)]
 mod tests {
@@ -92,10 +92,8 @@ pub fn unpack(tar_path: &str, base_path: &str) -> Result<()> {
 pub fn get_base_path() -> Result<String> {
     let path = env::current_exe()?;
 
-    let mut path = path.into_os_string().into_string()?;
-    if let Some(idx) = path.rfind('/') {
-        path.truncate(idx);
-    }
-
-    Ok(path)
+    path.parent()
+        .map(Path::display)
+        .map(|path| path.to_string())
+        .ok_or(Error::InvalidBasePath)
 }
