@@ -11,6 +11,7 @@ pub enum Error {
     Network(reqwest::Error),
     Encoding(std::str::Utf8Error),
     Output(fmt::Error),
+    InvalidBasePath,
 }
 
 impl fmt::Display for Error {
@@ -24,6 +25,7 @@ impl fmt::Display for Error {
             Network(err) => write!(fmt, "Error downloading the file ({})", err),
             Encoding(err) => write!(fmt, "Encoding error ({})", err),
             Output(err) => write!(fmt, "Output error ({})", err),
+            InvalidBasePath => write!(fmt, "Invalid Base Path"),
         }
     }
 }
