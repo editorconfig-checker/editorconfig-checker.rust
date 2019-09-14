@@ -34,6 +34,23 @@ mod tests {
         file.close().expect("Closing and deleting tempfile failed");
         assert_eq!(false, path_exists(&path));
     }
+
+    #[test]
+    fn test_get_base_path() {
+        let pwd = env::current_dir().unwrap();
+        let pwd = pwd.display();
+
+        // this is a little hacky... it only works as long as debug assertions stay dissabled for
+        // release builds. but for now `cargo test` and `cargo test --release` work, when executed
+        // from the project root
+        #[cfg(debug_assertions)]
+        let profile = "debug";
+        #[cfg(not(debug_assertions))]
+        let profile = "release";
+
+        let expected = format!("{}/target/{}/deps", pwd, profile);
+        assert_eq!(expected, get_base_path().unwrap());
+    }
 }
 
 // TODO: How to use cfg to pass a value into this function to be able to test it?
