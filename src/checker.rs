@@ -1,5 +1,5 @@
 use crate::error::{Error, Result};
-use std::{env, fs, io};
+use std::{env, fs, io, path::Path};
 
 #[cfg(test)]
 mod tests {
@@ -33,6 +33,23 @@ mod tests {
         assert_eq!(true, path_exists(&path));
         file.close().expect("Closing and deleting tempfile failed");
         assert_eq!(false, path_exists(&path));
+    }
+
+    #[test]
+    fn test_get_base_path() {
+        let pwd = env::current_dir().unwrap();
+        let pwd = pwd.display();
+
+        // this is a little hacky... it only works as long as debug assertions stay dissabled for
+        // release builds. but for now `cargo test` and `cargo test --release` work, when executed
+        // from the project root
+        #[cfg(debug_assertions)]
+        let profile = "debug";
+        #[cfg(not(debug_assertions))]
+        let profile = "release";
+
+        let expected = format!("{}/target/{}/deps", pwd, profile);
+        assert_eq!(expected, get_base_path().unwrap());
     }
 }
 
@@ -92,10 +109,8 @@ pub fn unpack(tar_path: &str, base_path: &str) -> Result<()> {
 pub fn get_base_path() -> Result<String> {
     let path = env::current_exe()?;
 
-    let mut path = path.into_os_string().into_string()?;
-    if let Some(idx) = path.rfind('/') {
-        path.truncate(idx);
-    }
-
-    Ok(path)
+    path.parent()
+        .map(Path::display)
+        .map(|path| path.to_string())
+        .ok_or(Error::InvalidBasePath)
 }
