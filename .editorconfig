@@ -10,7 +10,6 @@ end_of_line = lf
 
 [*.md]
 trim_trailing_whitespace = false
-indent_size = 2
 
 [*{.ecrc,.md,.travis.yml}]
 indent_size = 2
