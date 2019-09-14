@@ -8,7 +8,7 @@ use std::{
 };
 
 fn main() -> Result<()> {
-    let version = "2.0.2";
+    let version = "2.0.3";
     let architecture = checker::get_architecture()?;
     let os_type = checker::get_os_type()?;
 
