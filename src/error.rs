@@ -10,6 +10,7 @@ pub enum Error {
     InvalidPathName(std::ffi::OsString),
     Network(reqwest::Error),
     Encoding(std::str::Utf8Error),
+    Output(fmt::Error),
 }
 
 impl fmt::Display for Error {
@@ -22,6 +23,7 @@ impl fmt::Display for Error {
             InvalidPathName(err) => write!(fmt, "Invalid Path Name ({:?})", err),
             Network(err) => write!(fmt, "Error downloading the file ({})", err),
             Encoding(err) => write!(fmt, "Encoding error ({})", err),
+            Output(err) => write!(fmt, "Output error ({})", err),
         }
     }
 }
@@ -53,5 +55,11 @@ impl From<reqwest::Error> for Error {
 impl From<std::str::Utf8Error> for Error {
     fn from(err: std::str::Utf8Error) -> Self {
         Error::Encoding(err)
+    }
+}
+
+impl From<fmt::Error> for Error {
+    fn from(err: fmt::Error) -> Self {
+        Error::Output(err)
     }
 }

@@ -2,7 +2,10 @@ mod checker;
 mod error;
 
 use crate::error::Result;
-use std::process;
+use std::{
+    io::{self, Write},
+    process,
+};
 
 fn main() -> Result<()> {
     let version = "2.0.2";
@@ -26,7 +29,9 @@ fn main() -> Result<()> {
         .output()
         .expect("failed to run binary");
 
-    println!("{}", std::str::from_utf8(&command.stdout)?);
+    let stdout = io::stdout();
+    let mut stdout = stdout.lock();
+    writeln!(stdout, "{}", std::str::from_utf8(&command.stdout)?)?;
 
     process::exit(command.status.code().unwrap_or_default());
 }
