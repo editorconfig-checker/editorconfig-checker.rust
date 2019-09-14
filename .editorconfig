@@ -12,7 +12,7 @@ end_of_line = lf
 trim_trailing_whitespace = false
 indent_size = 2
 
-[.ecrc}]
+[*{.ecrc,.md,.travis.yml}]
 indent_size = 2
 
 [Cargo.lock]
