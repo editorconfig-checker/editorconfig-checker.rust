@@ -5,4 +5,4 @@ notifications:
 script:
   - cargo build --verbose --all
   - cargo test --verbose --all
-  - cargo run && rm -r target/debug/bin
+  - cargo run -- --verbose && rm -r target/debug/bin
