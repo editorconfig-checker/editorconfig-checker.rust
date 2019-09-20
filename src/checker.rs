@@ -55,36 +55,28 @@ mod tests {
     }
 
     #[test]
-    fn test_download_and_unpack() -> Result<()> {
+    fn test_download() -> Result<()> {
         let base_url = generate_base_url("2.0.3");
         let base_path = get_base_path(env::current_exe().unwrap()).unwrap();
+        let os_type = get_os_type(&sys_info::os_type()?)?;
 
-        let filename = generate_filename(
-            &get_os_type(&sys_info::os_type().unwrap()),
-            get_architecture().unwrap(),
-        );
+        let filename = generate_filename(&os_type, get_architecture().unwrap());
 
         let result = download(&base_url, &base_path, &filename);
         let tar_path = format!("{}/{}.tar.gz", base_path, filename);
-        assert_eq!((), result.unwrap());
-        assert_eq!(true, path_exists(&tar_path));
-
-        let result = unpack(&tar_path, &base_path);
         assert!(result.is_ok());
-        let binary_path = format!("{}/bin/{}", base_path, filename);
-        assert!(path_exists(&binary_path));
+        assert!(true, path_exists(&tar_path));
+        assert!(fs::remove_file(&tar_path).is_ok());
 
-        let result = fs::remove_file(&binary_path);
-        assert!(result.is_ok());
         Ok(())
     }
 
     #[test]
     fn test_get_os_type() {
-        assert_eq!(get_os_type("HALLO"), "hallo");
-        assert_eq!(get_os_type("Linux"), "linux");
-        assert_eq!(get_os_type("Darwin"), "darwin");
-        assert_eq!(get_os_type("WiNdOwS"), "windows");
+        assert_eq!(get_os_type("HALLO").unwrap(), "hallo");
+        assert_eq!(get_os_type("Linux").unwrap(), "linux");
+        assert_eq!(get_os_type("Darwin").unwrap(), "darwin");
+        assert_eq!(get_os_type("WiNdOwS").unwrap(), "windows");
     }
 }
 
@@ -105,8 +97,8 @@ pub fn path_exists(filename: impl AsRef<std::path::Path>) -> bool {
     filename.as_ref().exists()
 }
 
-pub fn get_os_type(os_type: &str) -> String {
-    os_type.to_lowercase()
+pub fn get_os_type(os_type: &str) -> Result<String, Error> {
+    Ok(os_type.to_lowercase())
 }
 
 pub fn generate_filename(os: &str, arch: &str) -> String {
