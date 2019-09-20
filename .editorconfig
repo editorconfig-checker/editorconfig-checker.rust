@@ -11,7 +11,7 @@ end_of_line = lf
 [*.md]
 trim_trailing_whitespace = false
 
-[*{.ecrc,.md,.travis.yml}]
+[*{.ecrc,.md,.yml}]
 indent_size = 2
 
 [Cargo.lock]
