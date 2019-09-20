@@ -4,7 +4,11 @@ use std::{fs, io, path::Path, path::PathBuf};
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::error::Result;
+    use flate2::write::GzEncoder;
+    use flate2::Compression;
     use std::env;
+    use std::fs::File;
     use tempfile::NamedTempFile;
 
     #[test]
@@ -69,6 +73,39 @@ mod tests {
         assert!(fs::remove_file(&tar_path).is_ok());
 
         Ok(())
+    }
+
+    #[test]
+    fn test_unpack() {
+        let archive_name = "archive.tar.gz";
+        let file_name = "file.txt";
+
+        // This block ensures every opened file is closed after the scope ends
+        {
+            // create the tar.gz file an define the compression
+            let tar_gz = File::create(archive_name).expect("Creating of tarball failed");
+            let enc = GzEncoder::new(tar_gz, Compression::default());
+            let mut tar = tar::Builder::new(enc);
+
+            // create a file to add to the tar.gz
+            fs::write(file_name, "content").expect("Creating of sample file failed");
+
+            // add the file to the tar.gz
+            let mut f = File::open(file_name).expect("Opening sample file failed");
+            tar.append_file(file_name, &mut f)
+                .expect("Appending sample file to tarball failed");
+
+            // remove added  file
+            fs::remove_file(file_name).expect("Removing sample file failed");
+        }
+
+        // actual testing
+        let pwd = env::current_dir().unwrap();
+        let pwd = pwd.to_str().unwrap();
+        let tar_path = format!("{}/{}", pwd, archive_name);
+
+        assert!(unpack(&tar_path, &pwd).is_ok());
+        fs::remove_file(file_name).expect("Removing sample file failed");
     }
 
     #[test]
