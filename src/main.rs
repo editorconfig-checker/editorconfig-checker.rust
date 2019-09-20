@@ -3,6 +3,7 @@ mod error;
 
 use crate::error::Result;
 use std::{
+    env,
     io::{self, Write},
     process,
 };
@@ -10,17 +11,17 @@ use std::{
 fn main() -> Result<()> {
     let version = "2.0.3";
     let architecture = checker::get_architecture()?;
-    let os_type = checker::get_os_type()?;
+    let os_type = checker::get_os_type(&sys_info::os_type().unwrap());
 
     let filename = checker::generate_filename(&os_type, architecture);
-    let base_path = checker::get_base_path()?;
+    let base_path = checker::get_base_path(env::current_exe()?)?;
     let tar_path = format!("{}/{}.tar.gz", base_path, filename);
     let binary_path = format!("{}/bin/{}", base_path, filename);
 
     if !checker::path_exists(&binary_path) {
         let base_url: String = checker::generate_base_url(version);
 
-        checker::download(&base_url, &filename)?;
+        checker::download(&base_url, &base_path, &filename)?;
         checker::unpack(&tar_path, &base_path)?;
     }
 

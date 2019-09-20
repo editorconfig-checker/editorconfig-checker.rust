@@ -1,9 +1,10 @@
 use crate::error::{Error, Result};
-use std::{env, fs, io, path::Path};
+use std::{fs, io, path::Path, path::PathBuf};
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::env;
     use tempfile::NamedTempFile;
 
     #[test]
@@ -49,7 +50,41 @@ mod tests {
         let profile = "release";
 
         let expected = format!("{}/target/{}/deps", pwd, profile);
-        assert_eq!(expected, get_base_path().unwrap());
+        let base_path = get_base_path(env::current_exe().unwrap()).unwrap();
+        assert_eq!(expected, base_path)
+    }
+
+    #[test]
+    fn test_download_and_unpack() -> Result<()> {
+        let base_url = generate_base_url("2.0.3");
+        let base_path = get_base_path(env::current_exe().unwrap()).unwrap();
+
+        let filename = generate_filename(
+            &get_os_type(&sys_info::os_type().unwrap()),
+            get_architecture().unwrap(),
+        );
+
+        let result = download(&base_url, &base_path, &filename);
+        let tar_path = format!("{}/{}.tar.gz", base_path, filename);
+        assert_eq!((), result.unwrap());
+        assert_eq!(true, path_exists(&tar_path));
+
+        let result = unpack(&tar_path, &base_path);
+        assert!(result.is_ok());
+        let binary_path = format!("{}/bin/{}", base_path, filename);
+        assert!(path_exists(&binary_path));
+
+        let result = fs::remove_file(&binary_path);
+        assert!(result.is_ok());
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_os_type() {
+        assert_eq!(get_os_type("HALLO"), "hallo");
+        assert_eq!(get_os_type("Linux"), "linux");
+        assert_eq!(get_os_type("Darwin"), "darwin");
+        assert_eq!(get_os_type("WiNdOwS"), "windows");
     }
 }
 
@@ -70,9 +105,8 @@ pub fn path_exists(filename: impl AsRef<std::path::Path>) -> bool {
     filename.as_ref().exists()
 }
 
-// TODO: Test
-pub fn get_os_type() -> Result<String> {
-    Ok(sys_info::os_type().map(|os_type| os_type.to_lowercase())?)
+pub fn get_os_type(os_type: &str) -> String {
+    os_type.to_lowercase()
 }
 
 pub fn generate_filename(os: &str, arch: &str) -> String {
@@ -84,9 +118,8 @@ pub fn generate_base_url(version: &str) -> String {
     format!("{}/{}", base_url, version)
 }
 
-// TODO: Test
-pub fn download(base_url: &str, filename: &str) -> Result<()> {
-    let filepath = format!("{}/{}.tar.gz", get_base_path()?, filename);
+pub fn download(base_url: &str, base_path: &str, filename: &str) -> Result<()> {
+    let filepath = format!("{}/{}.tar.gz", base_path, filename);
     let url = format!("{}/{}.tar.gz", base_url, filename);
     let mut resp = reqwest::get(&url)?;
     let mut out = fs::File::create(filepath)?;
@@ -94,7 +127,6 @@ pub fn download(base_url: &str, filename: &str) -> Result<()> {
     Ok(())
 }
 
-// TODO: Test
 pub fn unpack(tar_path: &str, base_path: &str) -> Result<()> {
     let tar_gz = fs::File::open(&tar_path)?;
     let tar = flate2::read::GzDecoder::new(tar_gz);
@@ -105,10 +137,7 @@ pub fn unpack(tar_path: &str, base_path: &str) -> Result<()> {
     Ok(())
 }
 
-// TODO: Test
-pub fn get_base_path() -> Result<String> {
-    let path = env::current_exe()?;
-
+pub fn get_base_path(path: PathBuf) -> Result<String> {
     path.parent()
         .map(Path::display)
         .map(|path| path.to_string())
