@@ -53,7 +53,12 @@ mod tests {
         #[cfg(not(debug_assertions))]
         let profile = "release";
 
-        let expected = format!("{}/target/{}/deps", pwd, profile);
+        let expected = format!(
+            "{}{sep}target{sep}{}{sep}deps",
+            pwd,
+            profile,
+            sep = std::path::MAIN_SEPARATOR
+        );
         let base_path = get_base_path(env::current_exe().unwrap()).unwrap();
         assert_eq!(expected, base_path)
     }
@@ -104,8 +109,9 @@ mod tests {
 
         // unpack the file
         assert!(unpack(&archive_path, &extraction_dir.path()).is_ok());
-        let unpacked_content = fs::read_to_string(format!("{}/{}", extraction_dir.path().display(), file_name))
-            .expect("Cannot read extracted file");
+        let unpacked_content =
+            fs::read_to_string(format!("{}/{}", extraction_dir.path().display(), file_name))
+                .expect("Cannot read extracted file");
         // check that the extracted file contains the same as the initial file
         assert_eq!(initinal_content, unpacked_content);
     }
