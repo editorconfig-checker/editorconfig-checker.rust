@@ -77,18 +77,20 @@ mod tests {
 
     #[test]
     fn test_unpack() {
-        let archive_name = "archive.tar.gz";
+        let creation_dir = tempfile::tempdir().expect("Cannot create temporary directory");
+        let archive_path = format!("{}/archive.tar.gz", creation_dir.path().display());
         let file_name = "file.txt";
+        let initinal_content = "content";
 
         // This block ensures every opened file is closed after the scope ends
         {
             // create the tar.gz file an define the compression
-            let tar_gz = File::create(archive_name).expect("Creating of tarball failed");
+            let tar_gz = File::create(&archive_path).expect("Creating of tarball failed");
             let enc = GzEncoder::new(tar_gz, Compression::default());
             let mut tar = tar::Builder::new(enc);
 
             // create a file to add to the tar.gz
-            fs::write(file_name, "content").expect("Creating of sample file failed");
+            fs::write(file_name, &initinal_content).expect("Creating of sample file failed");
 
             // add the file to the tar.gz
             let mut f = File::open(file_name).expect("Opening sample file failed");
@@ -98,14 +100,14 @@ mod tests {
             // remove added  file
             fs::remove_file(file_name).expect("Removing sample file failed");
         }
+        let extraction_dir = tempfile::tempdir().expect("Cannot create temporary directory");
 
-        // actual testing
-        let pwd = env::current_dir().unwrap();
-        let pwd = pwd.to_str().unwrap();
-        let tar_path = format!("{}/{}", pwd, archive_name);
-
-        assert!(unpack(&tar_path, &pwd).is_ok());
-        fs::remove_file(file_name).expect("Removing sample file failed");
+        // unpack the file
+        assert!(unpack(&archive_path, &extraction_dir.path()).is_ok());
+        let unpacked_content = fs::read_to_string(format!("{}/{}", extraction_dir.path().display(), file_name))
+            .expect("Cannot read extracted file");
+        // check that the extracted file contains the same as the initial file
+        assert_eq!(initinal_content, unpacked_content);
     }
 
     #[test]
@@ -156,7 +158,7 @@ pub fn download(base_url: &str, base_path: &str, filename: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn unpack(tar_path: &str, base_path: &str) -> Result<()> {
+pub fn unpack(tar_path: impl AsRef<Path>, base_path: impl AsRef<Path>) -> Result<()> {
     let tar_gz = fs::File::open(&tar_path)?;
     let tar = flate2::read::GzDecoder::new(tar_gz);
     let mut archive = tar::Archive::new(tar);
