@@ -1,9 +1,14 @@
 use crate::error::{Error, Result};
-use std::{env, fs, io, path::Path};
+use std::{fs, io, path::Path, path::PathBuf};
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::error::Result;
+    use flate2::write::GzEncoder;
+    use flate2::Compression;
+    use std::env;
+    use std::fs::File;
     use tempfile::NamedTempFile;
 
     #[test]
@@ -49,7 +54,66 @@ mod tests {
         let profile = "release";
 
         let expected = format!("{}/target/{}/deps", pwd, profile);
-        assert_eq!(expected, get_base_path().unwrap());
+        let base_path = get_base_path(env::current_exe().unwrap()).unwrap();
+        assert_eq!(expected, base_path)
+    }
+
+    #[test]
+    fn test_download() -> Result<()> {
+        let base_url = generate_base_url("2.0.3");
+        let base_path = get_base_path(env::current_exe().unwrap()).unwrap();
+        let os_type = get_os_type(&sys_info::os_type()?)?;
+
+        let filename = generate_filename(&os_type, get_architecture().unwrap());
+
+        let result = download(&base_url, &base_path, &filename);
+        let tar_path = format!("{}/{}.tar.gz", base_path, filename);
+        assert!(result.is_ok());
+        assert!(true, path_exists(&tar_path));
+        assert!(fs::remove_file(&tar_path).is_ok());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_unpack() {
+        let archive_name = "archive.tar.gz";
+        let file_name = "file.txt";
+
+        // This block ensures every opened file is closed after the scope ends
+        {
+            // create the tar.gz file an define the compression
+            let tar_gz = File::create(archive_name).expect("Creating of tarball failed");
+            let enc = GzEncoder::new(tar_gz, Compression::default());
+            let mut tar = tar::Builder::new(enc);
+
+            // create a file to add to the tar.gz
+            fs::write(file_name, "content").expect("Creating of sample file failed");
+
+            // add the file to the tar.gz
+            let mut f = File::open(file_name).expect("Opening sample file failed");
+            tar.append_file(file_name, &mut f)
+                .expect("Appending sample file to tarball failed");
+
+            // remove added  file
+            fs::remove_file(file_name).expect("Removing sample file failed");
+        }
+
+        // actual testing
+        let pwd = env::current_dir().unwrap();
+        let pwd = pwd.to_str().unwrap();
+        let tar_path = format!("{}/{}", pwd, archive_name);
+
+        assert!(unpack(&tar_path, &pwd).is_ok());
+        fs::remove_file(file_name).expect("Removing sample file failed");
+    }
+
+    #[test]
+    fn test_get_os_type() {
+        assert_eq!(get_os_type("HALLO").unwrap(), "hallo");
+        assert_eq!(get_os_type("Linux").unwrap(), "linux");
+        assert_eq!(get_os_type("Darwin").unwrap(), "darwin");
+        assert_eq!(get_os_type("WiNdOwS").unwrap(), "windows");
     }
 }
 
@@ -70,9 +134,8 @@ pub fn path_exists(filename: impl AsRef<std::path::Path>) -> bool {
     filename.as_ref().exists()
 }
 
-// TODO: Test
-pub fn get_os_type() -> Result<String> {
-    Ok(sys_info::os_type().map(|os_type| os_type.to_lowercase())?)
+pub fn get_os_type(os_type: &str) -> Result<String, Error> {
+    Ok(os_type.to_lowercase())
 }
 
 pub fn generate_filename(os: &str, arch: &str) -> String {
@@ -84,9 +147,8 @@ pub fn generate_base_url(version: &str) -> String {
     format!("{}/{}", base_url, version)
 }
 
-// TODO: Test
-pub fn download(base_url: &str, filename: &str) -> Result<()> {
-    let filepath = format!("{}/{}.tar.gz", get_base_path()?, filename);
+pub fn download(base_url: &str, base_path: &str, filename: &str) -> Result<()> {
+    let filepath = format!("{}/{}.tar.gz", base_path, filename);
     let url = format!("{}/{}.tar.gz", base_url, filename);
     let mut resp = reqwest::get(&url)?;
     let mut out = fs::File::create(filepath)?;
@@ -94,7 +156,6 @@ pub fn download(base_url: &str, filename: &str) -> Result<()> {
     Ok(())
 }
 
-// TODO: Test
 pub fn unpack(tar_path: &str, base_path: &str) -> Result<()> {
     let tar_gz = fs::File::open(&tar_path)?;
     let tar = flate2::read::GzDecoder::new(tar_gz);
@@ -105,10 +166,7 @@ pub fn unpack(tar_path: &str, base_path: &str) -> Result<()> {
     Ok(())
 }
 
-// TODO: Test
-pub fn get_base_path() -> Result<String> {
-    let path = env::current_exe()?;
-
+pub fn get_base_path(path: PathBuf) -> Result<String> {
     path.parent()
         .map(Path::display)
         .map(|path| path.to_string())
