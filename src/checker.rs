@@ -156,7 +156,7 @@ pub fn download(base_url: &str, base_path: &str, filename: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn unpack(tar_path: &str, base_path: &str) -> Result<()> {
+pub fn unpack(tar_path: impl AsRef<Path>, base_path: impl AsRef<Path>) -> Result<()> {
     let tar_gz = fs::File::open(&tar_path)?;
     let tar = flate2::read::GzDecoder::new(tar_gz);
     let mut archive = tar::Archive::new(tar);
