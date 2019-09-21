@@ -53,7 +53,7 @@ mod tests {
         #[cfg(not(debug_assertions))]
         let profile = "release";
 
-        let expected = format!("{}/target/{}/deps", pwd, profile);
+        let expected = format!("{}{sep}target{sep}{}{sep}deps", pwd, profile, sep = std::path::MAIN_SEPARATOR);
         let base_path = get_base_path(env::current_exe().unwrap()).unwrap();
         assert_eq!(expected, base_path)
     }
