@@ -50,7 +50,11 @@ jobs:
         with:
           toolchain: stable
           override: true
+
       - name: Run Tests
         uses: actions-rs/cargo@v1
         with:
           command: test
+
+     - name: Run editorconfig checker
+       run: cargo run -- --verbose
