@@ -1,5 +1,5 @@
 use crate::error::{Error, Result};
-use std::{fs, io, path::Path, path::PathBuf};
+use std::{fs, io, path::Path, path::PathBuf, str::FromStr};
 
 #[cfg(test)]
 mod tests {
@@ -13,9 +13,9 @@ mod tests {
 
     #[test]
     fn test_generate_filename() {
-        assert_eq!(generate_filename("abc", "def"), "ec-abc-def");
+        assert_eq!(generate_filename(OsType::Plan9, "def"), "ec-plan9-def");
 
-        assert_eq!(generate_filename("linux", "amd64"), "ec-linux-amd64");
+        assert_eq!(generate_filename(OsType::Linux, "amd64"), "ec-linux-amd64");
     }
 
     #[test]
@@ -67,9 +67,9 @@ mod tests {
     fn test_download() -> Result<()> {
         let base_url = generate_base_url("2.0.3");
         let base_path = get_base_path(env::current_exe().unwrap()).unwrap();
-        let os_type = get_os_type(&sys_info::os_type()?)?;
+        let os_type = sys_info::os_type()?.parse::<OsType>()?;
 
-        let filename = generate_filename(&os_type, get_architecture().unwrap());
+        let filename = generate_filename(os_type, get_architecture().unwrap());
 
         let result = download(&base_url, &base_path, &filename);
         let tar_path = format!("{}/{}.tar.gz", base_path, filename);
@@ -117,11 +117,67 @@ mod tests {
     }
 
     #[test]
-    fn test_get_os_type() {
-        assert_eq!(get_os_type("HALLO").unwrap(), "hallo");
-        assert_eq!(get_os_type("Linux").unwrap(), "linux");
-        assert_eq!(get_os_type("Darwin").unwrap(), "darwin");
-        assert_eq!(get_os_type("WiNdOwS").unwrap(), "windows");
+    fn test_parse_os_type() {
+        assert!("HALLO".parse::<OsType>().is_err());
+        assert_eq!("Linux".parse::<OsType>().unwrap(), OsType::Linux);
+        assert_eq!("Darwin".parse::<OsType>().unwrap(), OsType::Darwin);
+        assert_eq!("WiNdOwS".parse::<OsType>().unwrap(), OsType::Windows);
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum OsType {
+    Darwin,
+    Dragonfly,
+    FreeBSD,
+    Linux,
+    NetBSD,
+    OpenBSD,
+    // currently there is no Plan9 target for Rust
+    Plan9,
+    Solaris,
+    Windows,
+}
+
+impl OsType {
+    pub fn stringify(self) -> &'static str {
+        use OsType::*;
+        match self {
+            Darwin => "darwin",
+            Dragonfly => "dragonfly",
+            FreeBSD => "freebsd",
+            Linux => "linux",
+            NetBSD => "netbsd",
+            OpenBSD => "openbsd",
+            Plan9 => "plan9",
+            Solaris => "solaris",
+            Windows => "windows",
+        }
+    }
+}
+
+impl FromStr for OsType {
+    type Err = Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let lower = s.to_lowercase();
+        match lower.as_str() {
+            // TODO: test if this actually matches
+            "dragonfly" => Ok(OsType::Dragonfly),
+            // TODO: test if this actually matches
+            "freebsd" => Ok(OsType::FreeBSD),
+            "linux" => Ok(OsType::Linux),
+            "darwin" => Ok(OsType::Darwin),
+            // TODO: test if this actually matches
+            "netbsd" => Ok(OsType::NetBSD),
+            // TODO: test if this actually matches
+            "openbsd" => Ok(OsType::OpenBSD),
+            // TODO: test if this actually matches
+            "plan9" => Ok(OsType::Plan9),
+            // TODO: test if this actually matches
+            "solaris" => Ok(OsType::Solaris),
+            "windows" => Ok(OsType::Windows),
+            _ => Err(Error::ParseOS(lower)),
+        }
     }
 }
 
@@ -142,12 +198,8 @@ pub fn path_exists(filename: impl AsRef<std::path::Path>) -> bool {
     filename.as_ref().exists()
 }
 
-pub fn get_os_type(os_type: &str) -> Result<String, Error> {
-    Ok(os_type.to_lowercase())
-}
-
-pub fn generate_filename(os: &str, arch: &str) -> String {
-    format!("ec-{}-{}", os, arch)
+pub fn generate_filename(os: OsType, arch: &str) -> String {
+    format!("ec-{}-{}", os.stringify(), arch)
 }
 
 pub fn generate_base_url(version: &str) -> String {
