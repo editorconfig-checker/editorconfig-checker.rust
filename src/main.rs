@@ -1,7 +1,7 @@
 mod checker;
 mod error;
 
-use crate::error::Result;
+use crate::{checker::OsType, error::Result};
 use std::{
     env,
     io::{self, Write},
@@ -12,10 +12,11 @@ fn main() -> Result<()> {
     let version = "2.0.3";
 
     let architecture = checker::get_architecture()?;
-    let os_type = checker::get_os_type(&sys_info::os_type()?)?;
+    let os_type = sys_info::os_type()?;
+    let os_type = os_type.parse::<OsType>()?;
 
     let base_path = checker::get_base_path(env::current_exe()?)?;
-    let filename = checker::generate_filename(&os_type, architecture);
+    let filename = checker::generate_filename(os_type, architecture);
     let tar_path = format!("{}/{}.tar.gz", base_path, filename);
     let binary_path = format!("{}/bin/{}", base_path, filename);
 
