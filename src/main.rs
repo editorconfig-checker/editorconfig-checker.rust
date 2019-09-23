@@ -14,7 +14,6 @@ fn main() -> Result<()> {
     let architecture = checker::get_architecture()?;
     let os_type = sys_info::os_type()?;
     let os_type = os_type.parse::<OsType>()?;
-    // let os_type = checker::get_os_type(&sys_info::os_type()?)?;
 
     let base_path = checker::get_base_path(env::current_exe()?)?;
     let filename = checker::generate_filename(os_type, architecture);
