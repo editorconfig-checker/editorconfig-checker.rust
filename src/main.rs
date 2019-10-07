@@ -1,7 +1,8 @@
 mod checker;
 mod error;
+mod ostype;
 
-use crate::{checker::OsType, error::Result};
+use crate::{error::Result, ostype::OsType};
 use std::{
     env,
     io::{self, Write},
