@@ -1,3 +1,4 @@
+mod architecture;
 mod checker;
 mod error;
 mod ostype;
@@ -12,7 +13,7 @@ use std::{
 fn main() -> Result<()> {
     let version = "2.0.3";
 
-    let architecture = checker::get_architecture()?;
+    let architecture = architecture::get_architecture();
     let os_type = sys_info::os_type()?;
     let os_type = os_type.parse::<OsType>()?;
 

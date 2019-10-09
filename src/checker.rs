@@ -1,3 +1,4 @@
+use crate::architecture::Architecture;
 use crate::error::{Error, Result};
 use crate::ostype::OsType;
 use std::{fs, io, path::Path, path::PathBuf};
@@ -5,6 +6,7 @@ use std::{fs, io, path::Path, path::PathBuf};
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::architecture::get_architecture;
     use crate::error::Result;
     use flate2::write::GzEncoder;
     use flate2::Compression;
@@ -14,9 +16,15 @@ mod tests {
 
     #[test]
     fn test_generate_filename() {
-        assert_eq!(generate_filename(OsType::Plan9, "def"), "ec-plan9-def");
+        assert_eq!(
+            generate_filename(OsType::Plan9, Architecture::Amd64),
+            "ec-plan9-amd64"
+        );
 
-        assert_eq!(generate_filename(OsType::Linux, "amd64"), "ec-linux-amd64");
+        assert_eq!(
+            generate_filename(OsType::Linux, Architecture::I386),
+            "ec-linux-386"
+        );
     }
 
     #[test]
@@ -70,7 +78,7 @@ mod tests {
         let base_path = get_base_path(env::current_exe().unwrap()).unwrap();
         let os_type = sys_info::os_type()?.parse::<OsType>()?;
 
-        let filename = generate_filename(os_type, get_architecture().unwrap());
+        let filename = generate_filename(os_type, get_architecture());
 
         let result = download(&base_url, &base_path, &filename);
         let tar_path = format!("{}/{}.tar.gz", base_path, filename);
@@ -118,25 +126,12 @@ mod tests {
     }
 }
 
-// TODO: How to use cfg to pass a value into this function to be able to test it?
-// TODO: Test
-pub fn get_architecture() -> Result<&'static str> {
-    // TODO: This is not sufficient and needs to care for more cases
-    if cfg!(target_pointer_width = "64") {
-        Ok("amd64")
-    } else if cfg!(target_pointer_width = "32") {
-        Ok("386")
-    } else {
-        Err(Error::UnknownArch)
-    }
-}
-
 pub fn path_exists(filename: impl AsRef<std::path::Path>) -> bool {
     filename.as_ref().exists()
 }
 
-pub fn generate_filename(os: OsType, arch: &str) -> String {
-    format!("ec-{}-{}", os.stringify(), arch)
+pub fn generate_filename(os: OsType, arch: Architecture) -> String {
+    format!("ec-{}-{}", os.stringify(), arch.stringify())
 }
 
 pub fn generate_base_url(version: &str) -> String {
