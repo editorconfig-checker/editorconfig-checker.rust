@@ -3,9 +3,10 @@ mod checker;
 mod error;
 mod ostype;
 
-use crate::{error::Result, ostype::OsType};
+use crate::{architecture::Architecture, error::Result, ostype::OsType};
 use std::{
     env,
+    env::consts,
     io::{self, Write},
     process,
 };
@@ -13,9 +14,8 @@ use std::{
 fn main() -> Result<()> {
     let version = "2.0.3";
 
-    let architecture = architecture::get_architecture();
-    let os_type = sys_info::os_type()?;
-    let os_type = os_type.parse::<OsType>()?;
+    let architecture = consts::ARCH.parse::<Architecture>()?;
+    let os_type = consts::OS.parse::<OsType>()?;
 
     let base_path = checker::get_base_path(env::current_exe()?)?;
     let filename = checker::generate_filename(os_type, architecture);

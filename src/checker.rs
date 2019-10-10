@@ -6,11 +6,11 @@ use std::{fs, io, path::Path, path::PathBuf};
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::architecture::get_architecture;
     use crate::error::Result;
     use flate2::write::GzEncoder;
     use flate2::Compression;
     use std::env;
+    use std::env::consts;
     use std::fs::File;
     use tempfile::NamedTempFile;
 
@@ -76,9 +76,10 @@ mod tests {
     fn test_download() -> Result<()> {
         let base_url = generate_base_url("2.0.3");
         let base_path = get_base_path(env::current_exe().unwrap()).unwrap();
-        let os_type = sys_info::os_type()?.parse::<OsType>()?;
+        let architecture = consts::ARCH.parse::<Architecture>()?;
+        let os_type = consts::OS.parse::<OsType>()?;
 
-        let filename = generate_filename(os_type, get_architecture());
+        let filename = generate_filename(os_type, architecture);
 
         let result = download(&base_url, &base_path, &filename);
         let tar_path = format!("{}/{}.tar.gz", base_path, filename);
