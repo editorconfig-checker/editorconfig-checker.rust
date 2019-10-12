@@ -5,9 +5,8 @@ pub type Result<T, E = Error> = std::result::Result<T, E>;
 #[derive(Debug)]
 pub enum Error {
     IO(std::io::Error),
-    UnknownArch,
-    UnknownOS(sys_info::Error),
     ParseOS(String),
+    ParseArch(String),
     InvalidPathName(std::ffi::OsString),
     Network(reqwest::Error),
     Encoding(std::str::Utf8Error),
@@ -20,9 +19,8 @@ impl fmt::Display for Error {
         use Error::*;
         match self {
             IO(err) => write!(fmt, "IO({})", err),
-            UnknownArch => write!(fmt, "Unknown Architecture"),
-            UnknownOS(err) => write!(fmt, "Unknown Operating System ({})", err),
             ParseOS(err) => write!(fmt, "Cannot parse Operating System Name ({})", err),
+            ParseArch(err) => write!(fmt, "Cannot parse System Architecture ({})", err),
             InvalidPathName(err) => write!(fmt, "Invalid Path Name ({:?})", err),
             Network(err) => write!(fmt, "Error downloading the file ({})", err),
             Encoding(err) => write!(fmt, "Encoding error ({})", err),
@@ -35,12 +33,6 @@ impl fmt::Display for Error {
 impl From<std::io::Error> for Error {
     fn from(err: std::io::Error) -> Self {
         Error::IO(err)
-    }
-}
-
-impl From<sys_info::Error> for Error {
-    fn from(err: sys_info::Error) -> Self {
-        Error::UnknownOS(err)
     }
 }
 

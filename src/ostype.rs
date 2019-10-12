@@ -11,6 +11,7 @@ mod tests {
         assert!("HALLO".parse::<OsType>().is_err());
         assert_eq!("Linux".parse::<OsType>().unwrap(), OsType::Linux);
         assert_eq!("Darwin".parse::<OsType>().unwrap(), OsType::Darwin);
+        assert_eq!("macos".parse::<OsType>().unwrap(), OsType::Darwin);
         assert_eq!("WiNdOwS".parse::<OsType>().unwrap(), OsType::Windows);
     }
 }
@@ -51,12 +52,12 @@ impl FromStr for OsType {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let lower = s.to_lowercase();
         match lower.as_str() {
+            "linux" => Ok(OsType::Linux),
+            "macos" | "darwin" => Ok(OsType::Darwin),
             // TODO: test if this actually matches
             "dragonfly" => Ok(OsType::Dragonfly),
             // TODO: test if this actually matches
             "freebsd" => Ok(OsType::FreeBSD),
-            "linux" => Ok(OsType::Linux),
-            "darwin" => Ok(OsType::Darwin),
             // TODO: test if this actually matches
             "netbsd" => Ok(OsType::NetBSD),
             // TODO: test if this actually matches
