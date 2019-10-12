@@ -53,8 +53,7 @@ impl FromStr for OsType {
         let lower = s.to_lowercase();
         match lower.as_str() {
             "linux" => Ok(OsType::Linux),
-            "darwin" => Ok(OsType::Darwin),
-            "macos" => Ok(OsType::Darwin),
+            "macos" | "darwin" => Ok(OsType::Darwin),
             // TODO: test if this actually matches
             "dragonfly" => Ok(OsType::Dragonfly),
             // TODO: test if this actually matches
