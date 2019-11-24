@@ -11,6 +11,7 @@ pub enum Error {
     Network(reqwest::Error),
     Encoding(std::str::Utf8Error),
     Output(fmt::Error),
+    Xdg(xdg::BaseDirectoriesError),
 }
 
 impl fmt::Display for Error {
@@ -24,8 +25,14 @@ impl fmt::Display for Error {
             Network(err) => write!(fmt, "Error downloading the file ({})", err),
             Encoding(err) => write!(fmt, "Encoding error ({})", err),
             Output(err) => write!(fmt, "Output error ({})", err),
-            InvalidBasePath => write!(fmt, "Invalid Base Path"),
+            Xdg(err) => write!(fmt, "XdgError({})", err),
         }
+    }
+}
+
+impl From<xdg::BaseDirectoriesError> for Error {
+    fn from(err: xdg::BaseDirectoriesError) -> Self {
+        Error::Xdg(err)
     }
 }
 
