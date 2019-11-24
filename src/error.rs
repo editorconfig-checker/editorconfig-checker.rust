@@ -11,7 +11,6 @@ pub enum Error {
     Network(reqwest::Error),
     Encoding(std::str::Utf8Error),
     Output(fmt::Error),
-    InvalidBasePath,
 }
 
 impl fmt::Display for Error {
