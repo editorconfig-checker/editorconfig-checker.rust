@@ -117,7 +117,7 @@ pub fn generate_base_url(version: &str) -> String {
     format!("{}/{}", base_url, version)
 }
 
-pub fn download(base_url: &str, base_path: &str, filename: &str) -> Result<()> {
+pub fn download(base_url: &str, base_path: impl Display, filename: impl Display) -> Result<()> {
     let filepath = format!("{}/{}.tar.gz", base_path, filename);
     let url = format!("{}/{}.tar.gz", base_url, filename);
     let mut resp = reqwest::get(&url)?;
