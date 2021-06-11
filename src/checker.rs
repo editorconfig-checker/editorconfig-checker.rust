@@ -1,7 +1,7 @@
 use crate::architecture::Architecture;
-use crate::error::{Error, Result};
+use crate::error::Result;
 use crate::ostype::OsType;
-use std::{fs, io, path::Path, path::PathBuf};
+use std::{fmt::Display, fs, io, path::Path};
 
 #[cfg(test)]
 mod tests {
@@ -9,7 +9,6 @@ mod tests {
     use crate::error::Result;
     use flate2::write::GzEncoder;
     use flate2::Compression;
-    use std::env;
     use std::env::consts;
     use std::fs::File;
     use tempfile::NamedTempFile;
@@ -50,32 +49,10 @@ mod tests {
     }
 
     #[test]
-    fn test_get_base_path() {
-        let pwd = env::current_dir().unwrap();
-        let pwd = pwd.display();
-
-        // this is a little hacky... it only works as long as debug assertions stay dissabled for
-        // release builds. but for now `cargo test` and `cargo test --release` work, when executed
-        // from the project root
-        #[cfg(debug_assertions)]
-        let profile = "debug";
-        #[cfg(not(debug_assertions))]
-        let profile = "release";
-
-        let expected = format!(
-            "{}{sep}target{sep}{}{sep}deps",
-            pwd,
-            profile,
-            sep = std::path::MAIN_SEPARATOR
-        );
-        let base_path = get_base_path(env::current_exe().unwrap()).unwrap();
-        assert_eq!(expected, base_path)
-    }
-
-    #[test]
     fn test_download() -> Result<()> {
         let base_url = generate_base_url("2.0.3");
-        let base_path = get_base_path(env::current_exe().unwrap()).unwrap();
+        let base_path = tempfile::tempdir().unwrap();
+        let base_path = base_path.path().display().to_string();
         let architecture = consts::ARCH.parse::<Architecture>()?;
         let os_type = consts::OS.parse::<OsType>()?;
 
@@ -140,7 +117,7 @@ pub fn generate_base_url(version: &str) -> String {
     format!("{}/{}", base_url, version)
 }
 
-pub fn download(base_url: &str, base_path: &str, filename: &str) -> Result<()> {
+pub fn download(base_url: &str, base_path: impl Display, filename: impl Display) -> Result<()> {
     let filepath = format!("{}/{}.tar.gz", base_path, filename);
     let url = format!("{}/{}.tar.gz", base_url, filename);
     let mut resp = reqwest::get(&url)?;
@@ -157,11 +134,4 @@ pub fn unpack(tar_path: impl AsRef<Path>, base_path: impl AsRef<Path>) -> Result
     fs::remove_file(&tar_path)?;
 
     Ok(())
-}
-
-pub fn get_base_path(path: PathBuf) -> Result<String> {
-    path.parent()
-        .map(Path::display)
-        .map(|path| path.to_string())
-        .ok_or(Error::InvalidBasePath)
 }

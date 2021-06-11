@@ -11,6 +11,7 @@ sys-info = "0.5.10"
 reqwest = "0.9.24"
 tar = "0.4.27"
 flate2 = "1.0.13"
+xdg = "^2.1"
 
 [dev-dependencies]
 tempfile = "3.1.0"
